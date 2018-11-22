@@ -42,4 +42,3 @@ exprs ns = [e | (ls rs) <- split ns, l <- exprs ls, r <- exprs rs, e <- combine 
 
 combine :: Expr -> Expr -> [Expr]
 combine l r = undefined
-
