@@ -38,7 +38,38 @@ split = undefined
 exprs :: [Int] -> [Expr]
 exprs [] = []
 exprs [n] = [Val n]
-exprs ns = [e | (ls rs) <- split ns, l <- exprs ls, r <- exprs rs, e <- combine l r]
+exprs ns = [e | (ls, rs) <- split ns, l <- exprs ls, r <- exprs rs, e <- combine l r]
 
+ops :: [Op]
+ops = [Add, Sub, Mul, Div]
+
+-- combine {2+3} {7*6} = [{2+3+7*6}, {2+3-7*6}, {2+3*7*6}, {2+3/7*6}]
 combine :: Expr -> Expr -> [Expr]
-combine l r = undefined
+combine l r = [App op l r | op <- ops]
+
+solutions :: [Int] -> Int -> [Expr]
+solutions ns n = [e | c <- choices ns, e <- exprs c, eval e == [n]]
+
+----- Improvement-----
+
+type Result = (Expr, Int)
+
+results :: [Int] -> [Result]
+results [] = []
+results [n] = [(Val n, n) | n > 0]
+results ns = [e | (ls, rs) <- split ns, lx <- results ls, rx <- results rs, e <- combine' lx rx]
+
+combine' :: Result -> Result -> [Result]
+combine' (l, x) (r, y) = [(App op l r, apply op x y) | op <- ops, valid op x y]
+
+solutions' :: [Int] -> Int -> [Expr]
+solutions' ns n = [e | ns' <- choices ns, (e, m) <- results ns', m == n]
+
+----- Improvement -----
+
+-- Exploiting numeric properties
+valid' :: Op -> Int -> Int -> Bool
+valid' Add x y = x <= y
+valid' Sub x y = x > y
+valid' Mul x y = x /= 1 && y /= 1 && x <= y
+valid' Div x y = y /= 1 && x `mod` y == 0
